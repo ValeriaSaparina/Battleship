@@ -1,5 +1,11 @@
 package com.example.semestrovkalast;
 
+import javafx.scene.Parent;
+import javafx.scene.layout.GridPane;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.Socket;
 import java.util.Arrays;
@@ -7,23 +13,17 @@ import java.util.Arrays;
 public class Player implements Serializable {
 
     private String name;
-    private transient Socket playerSocket;
-    //    private ObjectInputStream input;
-    private char[][] gameBoard;
+    private Socket playerSocket;
     private boolean isReady = false;
+    private int id;
     private int[] message = null;
     private boolean isWinner = false;
+    private Board gameBoard;
+    private GameRoom gameRoom;
+    private int roomID;
 
     public Player(Socket playerSocket) {
         this.playerSocket = playerSocket;
-//        try {
-////            this.input = new ObjectInputStream(playerSocket.getInputStream());
-//            System.out.println("HI");
-//            this.output = new ObjectOutputStream(playerSocket.getOutputStream());
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-        this.gameBoard = new char[10][10];
         this.name = "Name of player";
     }
 
@@ -31,6 +31,18 @@ public class Player implements Serializable {
         this(playerSocket);
         this.name = name;
         // Initialize the game board and place ships as needed
+    }
+
+    public GameRoom getGameRoom() {
+        return gameRoom;
+    }
+
+    public void setGameRoom(GameRoom gameRoom) {
+        this.gameRoom = gameRoom;
+    }
+
+    public Socket getPlayerSocket() {
+        return playerSocket;
     }
 
     public boolean isReady() {
@@ -45,29 +57,35 @@ public class Player implements Serializable {
         return name;
     }
 
-    public char[][] getGameBoard() {
+    public Board getGameBoard() {
         return gameBoard;
     }
-
-    @Override
-    public String toString() {
-        return "Player{" +
-                "name='" + name + '\'' +
-                ",\nplayerSocket=" + playerSocket +
-                ",\ngameBoard=" + Arrays.toString(gameBoard) +
-                ",\nisReady=" + isReady +
-                ",\nmessage=" + Arrays.toString(message) +
-                ",\nisWinner=" + isWinner +
-                '}';
+    public void setGameBoard(Board gameBoard) {
+        this.gameBoard = gameBoard;
     }
 
-    public void makeMove(Integer columnIndex, Integer rowIndex) {
-        message = new int[]{columnIndex, rowIndex};
+//    @Override
+//    public String toString() {
+//        return "Player{" +
+//                "name='" + name + '\'' +
+//                ",\nplayerSocket=" + playerSocket +
+////                ",\ngameBoard=" + Arrays.toString(gameBoard.getBoard().getChildren().toArray()) +
+//                ",\nisReady=" + isReady +
+//                ",\nmessage=" + Arrays.toString(message) +
+//                ",\nisWinner=" + isWinner +
+//                '}';
+//    }
+
+    public void makeMove(Integer columnIndex, Integer rowIndex) throws IOException {
+        Message message = new Message(roomID, id, columnIndex, rowIndex, Params.SHOT);
+        ObjectOutputStream output = new ObjectOutputStream(playerSocket.getOutputStream());
+        output.writeObject(message);
+        output.flush();
+        System.out.println(message);
     }
 
     public int[] move() {
-        while (message == null) {
-        }
+        while (message == null) {}
         int[] res = new int[]{message[0], message[1]};
         message = null;
         return res;
@@ -81,6 +99,20 @@ public class Player implements Serializable {
         this.playerSocket = socket;
     }
 
-    // Additional methods or properties as needed, such as hit/miss tracking, ship placement, etc.
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getRoomID() {
+        return roomID;
+    }
+
+    public void setRoomID(int roomID) {
+        this.roomID = roomID;
+    }
 }
 

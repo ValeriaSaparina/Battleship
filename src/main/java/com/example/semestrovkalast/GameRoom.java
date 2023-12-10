@@ -1,26 +1,61 @@
 package com.example.semestrovkalast;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.HashMap;
 
 public class GameRoom implements Runnable {
-    private boolean isReady = false;
-    private List<Player> playerList = new ArrayList<>();
+    private static int playerID;
+    private boolean isReady;
+    private HashMap<Integer, Player> playerList;
+    private boolean noWinner;
+    private static int roomId;
 
-    private BattleshipUI battleshipUI;
-    private boolean noWinner = true;
+    static {
+        playerID = 0;
+        roomId = 0;
+    }
 
     @Override
     public void run() {
-        // Game room setup and player interactions
-
-        // Wait for the game to be ready before starting
         waitUntilReady();
-//        startGame();
+        startGame();
+    }
+
+    public GameRoom() {
+        roomId += 1;
+        isReady = false;
+        playerList = new HashMap<>();
+        noWinner = true;
+    }
+
+    private void waitUntilReady() {
+        while (!isReady) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+
+    private void startGame() {
+        System.out.println("Game start");
+        for (Player player : playerList.values()) {
+            try {
+                BufferedWriter toClient = new BufferedWriter(new OutputStreamWriter(player.getPlayerSocket().getOutputStream()));
+                toClient.write(1);
+                toClient.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
 
         while (noWinner) {
-            for (Player player : playerList) {
+            for (Player player : playerList.values()) {
                 player.move();
                 if (player.isWinner()) {
                     noWinner = false;
@@ -28,47 +63,39 @@ public class GameRoom implements Runnable {
                 }
             }
         }
-
-
-
-        // The game room is ready, start the game
-//        startGame();
+//        TODO: smth like change setOnAction()
     }
 
-    private void waitUntilReady() {
-        // Logic to wait until the game is ready
-        while (!isReady) {
-            setReady(playerList);
-            try {
-                Thread.sleep(100);  // Sleep for a short period
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private void startGame() {
-//        TODO: startGame()
-//        smth like change setOnAction()
-
-    }
-
-    public void setReady(List<Player> players) {
-        boolean ready = true;
-        for (Player p : players) {
-            ready &= p.isReady();
-        }
-        isReady = ready;
-    }
 
     public boolean isFull() {
-        if (playerList.size() != 2) return false;
-
-        isReady = true;
-        return true;
+        return playerList.size() == 2;
     }
 
     public void addPlayer(Player player) {
-        playerList.add(player);
+        // TODO: get ID from server
+        playerList.put(playerID, player);
+        playerID += 1;
     }
+
+    public Player getPlayer(int id) {
+        return playerList.get(id);
+    }
+
+    public int getId() {
+        return roomId;
+    }
+
+    public HashMap<Integer, Player> getPlayerList() {
+        return playerList;
+    }
+
+
+    public boolean isReady() {
+        return isReady;
+    }
+
+    public void setReady(boolean isReady) {
+        this.isReady = isReady;
+    }
+
 }

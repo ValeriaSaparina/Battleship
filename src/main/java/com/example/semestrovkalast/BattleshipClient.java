@@ -1,10 +1,11 @@
 package com.example.semestrovkalast;
 
 import javafx.application.Platform;
-import javafx.scene.control.Button;
 import javafx.stage.Stage;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 
 public class BattleshipClient {
@@ -12,90 +13,64 @@ public class BattleshipClient {
 
     //    private BufferedWriter output;
     private Player player;
-    private BattleshipUI gameUI = new BattleshipUI();
+    private int gameRoomID;
+    private BattleshipUI gameUI;
 
     public BattleshipClient(String serverAddress, int port) {
         try {
-            // Connect to the server
             socket = new Socket(serverAddress, port);
-//            initIOStreams();
-            ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-//            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            while (true) {
+            BufferedReader fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            player = new Player(socket);
 
-                if (getPlayerFromServer(input)) {
+            int id = getGameRoomIDFromServer(fromServer);
+            if (id != -1) {
+                gameRoomID = id;
+                player.setRoomID(id);
                 showStartWindow();
-                }
-//                if (gameIsStart()) {
-//                    gameUI.updateSetOnActions();
-//                }
             }
 
-        } catch (IOException /*| ClassNotFoundException*/ e) {
+            int isStarted = fromServer.read();
+            if (isStarted == 1) {
+                gameUI.updateSetOnActions();
+            }
+            while (true) {}
+
+        } catch (IOException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
         }
-//        } finally {
-//            closeIOStreams();
-//        }
     }
 
     public static void main(String[] args) {
-        String serverAddress = "127.0.0.1";  // Replace with the actual server IP address
-        int port = 12345;  // Replace with the actual server port
+        String serverAddress = "localhost";  // Replace with the actual server IP address
+        int port = 4004;  // Replace with the actual server port
 
         BattleshipClient client = new BattleshipClient(serverAddress, port);
 
     }
 
-    private boolean gameIsStart(ObjectInputStream input) throws IOException, ClassNotFoundException {
-        Object inputObj = input.readObject();
-        if (inputObj instanceof Boolean) {
-            return (boolean) inputObj;
-        }
-        return false;
+    private boolean gameIsStarted() {
+        return player.getGameRoom().isReady();
     }
 
-    private boolean getPlayerFromServer(ObjectInputStream input /*BufferedReader input*/) throws IOException, ClassNotFoundException {
-        Object inputObj = input.readObject();
-        if (inputObj instanceof Player) {
-            player = (Player) inputObj;
-            player.setSocket(socket);
-            System.out.println(player);
-            return true;
+    private int getGameRoomIDFromServer(BufferedReader fromServer) throws IOException {
+        try {
+            System.out.println("getting roomID");
+            return fromServer.read();
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
         }
-        return false;
-//        return  str != null;
-    }
-
-    private void initIOStreams() throws IOException {
-//        input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//        input = new ObjectInputStream(socket.getInputStream());
-//        output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+        System.out.println("ERROR");
+        return -1;
     }
 
     private void showStartWindow() {
         Platform.startup(() -> {
+            System.out.println("in startup");
             Stage primaryStage = new Stage();
-            gameUI.setPlayer(player);
+            gameUI = new BattleshipUI(player, player.getGameRoom());
+//            player.getGameRoom().setID(gameRoomID);
+            gameUI.setGameRoomID(gameRoomID);
             gameUI.start(primaryStage);
         });
-    }
-
-//    public void sendMove(int x, int y) throws IOException {
-//        // Send the player's move to the server
-//        output.write("MOVE " + x + " " + y);
-//    }
-
-    public void closeIOStreams() {
-        try {
-            // Close the connections
-//            input.close();
-//            output.close();
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

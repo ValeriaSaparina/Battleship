@@ -9,15 +9,22 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
 public class BattleshipUI extends Application {
-    private char[][] player1Board;
-    private char[][] player2Board;
-    private GridPane playerBoardGridPane;
-    private GridPane enemyBoardGridPane;
+    private Board playerBoard;
+    private Board enemyBoard;
     private Player player;
     private boolean isStart = false;
+    private int gameRoomID = 9;
+//    private GameRoom gameRoom;
+
+    public BattleshipUI(Player player, GameRoom gameRoom) {
+        this.player = player;
+//        this.gameRoom = gameRoom;
+    }
 
     public static void main(String[] args) {
         launch(args);
@@ -25,6 +32,7 @@ public class BattleshipUI extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+//        gameRoom = player.getGameRoom();
         initGameBoards();
         showStage(primaryStage);
     }
@@ -57,9 +65,18 @@ public class BattleshipUI extends Application {
         Button startButton = new Button("Start Game");
         startButton.setOnAction(event -> {
             startButton.setVisible(false);
+            try {
+                ObjectOutputStream toServer = new ObjectOutputStream(player.getPlayerSocket().getOutputStream());
+                toServer.writeObject(new Message(gameRoomID, player.getId(), Params.READY));
+                toServer.flush();
+                player.setReady(true);
+//                toServer.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         });
 
-        HBox hBox = new HBox(playerBoardGridPane, startButton, enemyBoardGridPane);
+        HBox hBox = new HBox(playerBoard.getBoard(), startButton, enemyBoard.getBoard());
         hBox.setSpacing(10);
         hBox.setPadding(new Insets(10, 10, 10, 10));
         return hBox;
@@ -70,6 +87,7 @@ public class BattleshipUI extends Application {
 
         Scene scene = new Scene(gethBox(), 500, 500);
         primaryStage.setScene(scene);
+        System.out.println("in showStage");
         primaryStage.show();
     }
 
@@ -81,13 +99,15 @@ public class BattleshipUI extends Application {
 //                ((Button)(enemyBoardGridPane.getChildren()).get(0)).setText("c");
 //                System.out.println((enemyBoardGridPane.getChildren()).get(1));
             } else {
-                button.setOnAction(event -> {});
+                button.setOnAction(event -> {
+                });
             }
             // Handle the player's move
             // For example, update the game logic with the move and update the UI based on the game state
         } else {
             if (isEnemyBoard) {
-                button.setOnAction(event -> {});
+                button.setOnAction(event -> {
+                });
             } else {
 //                button.
             }
@@ -95,25 +115,11 @@ public class BattleshipUI extends Application {
     }
 
 
-
     private void initGameBoards() {
 
-
-        playerBoardGridPane = initGameBoard(false);
-        enemyBoardGridPane = initGameBoard(true);
-
-//        this.player = player;
-//        player1Board = new char[10][10];
-//        player1Board = player1.getGameBoard();
-//        player2Board = new char[10][10];
-//        int k = 0;
-//        for (int i = 0; i < 10; i++) {
-//            for (int j = 0; j < 10; j++) {
-//                k++;
-//                player2Board[i][j] = String.valueOf(k).charAt(0);
-//            }
-//        }
-
+        playerBoard = initGameBoard(false);
+        player.setGameBoard(playerBoard);
+        enemyBoard = initGameBoard(true);
 
         // Initialize the game boards with the initial state and ship placements
         // For example:
@@ -121,7 +127,7 @@ public class BattleshipUI extends Application {
         // placeShips(player2Board);
     }
 
-    private GridPane initGameBoard(boolean isEnemyBoard) {
+    private Board initGameBoard(boolean isEnemyBoard) {
         GridPane gridPane = new GridPane();
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
@@ -136,7 +142,7 @@ public class BattleshipUI extends Application {
                 gridPane.add(button, j, i);
             }
         }
-        return gridPane;
+        return new Board(gridPane);
     }
 
     public void launchGUI() {
@@ -149,15 +155,37 @@ public class BattleshipUI extends Application {
 
     public void updateSetOnActions() {
         updateActionForEnemyBoard();
+        updateActionForPlayerBoard();
+    }
+
+    private void updateActionForPlayerBoard() {
+        List<Node> nodes = playerBoard.getBoard().getChildren();
+        for (Node node : nodes) {
+            ((Button) node).setOnAction(event -> {
+                System.out.println("clicked my board");
+            });
+        }
+
     }
 
     private void updateActionForEnemyBoard() {
-        List<Node> nodes = enemyBoardGridPane.getChildren();
+        List<Node> nodes = enemyBoard.getBoard().getChildren();
         for (Node node : nodes) {
             ((Button) node).setOnAction(event -> {
-                player.makeMove(GridPane.getColumnIndex(node), GridPane.getRowIndex(node));
+                try {
+                    System.out.println("clicked on enemy board");
+                    player.makeMove(GridPane.getColumnIndex(node), GridPane.getRowIndex(node));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             });
         }
+    }
+
+
+    public void setGameRoomID(int gameRoomID) {
+//        gameRoom.setID(gameRoomID);
+        this.gameRoomID = gameRoomID;
     }
 }
 

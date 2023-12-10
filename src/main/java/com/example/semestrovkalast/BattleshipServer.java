@@ -1,78 +1,78 @@
 package com.example.semestrovkalast;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class BattleshipServer {
     private ServerSocket serverSocket;
-    private List<GameRoom> gameRooms;
-//    private BufferedReader input;
-        private BufferedWriter output;
-//    private ObjectOutputStream output;
 
-    public BattleshipServer(int port) {
+    private HashMap<Integer, GameRoom> startedGameRooms;
+    private List<Socket> allSockets;
+
+    private MoveListener moveListener;
+    private EnterListener enterListener;
+
+    private static BattleshipServer serverInstance;
+    private final int PORT = 4004;
+
+    private BattleshipServer() {
         try {
-            serverSocket = new ServerSocket(port);
-            gameRooms = new ArrayList<>();
+            serverSocket = new ServerSocket(PORT);
+            startedGameRooms = new HashMap<>();
+            allSockets = new ArrayList<>();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    public static BattleshipServer getServerInstance() {
+        if (serverInstance == null) {
+            serverInstance = new BattleshipServer();
+        }
+        return serverInstance;
+    }
+
     public static void main(String[] args) {
-        int port = 12345;
-        BattleshipServer server = new BattleshipServer(port);
+        BattleshipServer server = getServerInstance();
         server.start();
     }
 
     public void start() {
         System.out.println("Server started. Waiting for clients...");
-        while (true) {
-            try {
-                Socket clientSocket = serverSocket.accept();
-                Player player = new Player(clientSocket);
-                System.out.println("New client connected: " + player);
-//                try {
-                ObjectOutputStream output = new ObjectOutputStream(clientSocket.getOutputStream());
-//                output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-                output.writeObject(player);
-                output.flush();
-                output.close();
-//                    output.flush(); // Custom message to trigger game window opening
-                    System.out.println(player);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-                GameRoom gameRoom = getAvailableGameRoom();
-                gameRoom.addPlayer(player);
-                if (gameRoom.isFull()) {
-                    Thread gameThread = new Thread(gameRoom);
-                    gameThread.start();
-                    gameRooms.remove(gameRoom);
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        moveListener = new MoveListener(this);
+        enterListener = new EnterListener(this);
+        new Thread(enterListener).start();
+        new Thread(moveListener).start();
     }
 
-    private GameRoom getAvailableGameRoom() {
-        for (GameRoom room : gameRooms) {
-            if (!room.isFull()) {
-                return room;
-            }
-        }
-        GameRoom newRoom = new GameRoom();
-        gameRooms.add(newRoom);
-        return newRoom;
+
+    public ServerSocket getServerSocket() {
+        return serverSocket;
     }
 
-    private void closeIOStreams() throws IOException {
 
-//        output.close();
+    public void addStartedGameRoom(int id, GameRoom gameRoom) {
+        startedGameRooms.put(id, gameRoom);
+    }
+
+    public GameRoom getRoom(int idRoom) {
+        return startedGameRooms.get(idRoom);
+    }
+
+    public MoveListener getMoveListener() {
+        return moveListener;
+    }
+
+    public List<Socket> getAllSockets() {
+        return allSockets;
+    }
+
+
+    public void addSocket(Socket clientSocket) {
+        allSockets.add(clientSocket);
     }
 }
