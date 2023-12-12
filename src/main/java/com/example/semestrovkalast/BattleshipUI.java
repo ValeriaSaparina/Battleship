@@ -1,10 +1,13 @@
 package com.example.semestrovkalast;
 
 import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventType;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
@@ -70,7 +73,6 @@ public class BattleshipUI extends Application {
                 toServer.writeObject(new Message(gameRoomID, player.getId(), Params.READY));
                 toServer.flush();
                 player.setReady(true);
-//                toServer.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -102,8 +104,6 @@ public class BattleshipUI extends Application {
                 button.setOnAction(event -> {
                 });
             }
-            // Handle the player's move
-            // For example, update the game logic with the move and update the UI based on the game state
         } else {
             if (isEnemyBoard) {
                 button.setOnAction(event -> {
@@ -133,11 +133,15 @@ public class BattleshipUI extends Application {
             for (int j = 0; j < 10; j++) {
                 Button button = new Button();
                 button.setMinSize(40, 40); // Set button size
-                int x = j;
-                int y = i;
-                button.setOnAction(event -> {
-                    processMove(x, y, button, /*board,*/ isEnemyBoard);
-                });
+                int x = i;
+                int y = j;
+                if (!isEnemyBoard) {
+//                    if (y % 2 == 0)
+                    button.setOnMousePressed(event -> handleMouseClick(button, x, y, event.getButton()));
+                }
+//                button.setOnAction(event -> {
+//                    processMove(x, y, button, /*board,*/ isEnemyBoard);
+//                });
 //                button.setText(String.valueOf(board[i][j]));
                 gridPane.add(button, j, i);
             }
@@ -173,13 +177,23 @@ public class BattleshipUI extends Application {
         for (Node node : nodes) {
             ((Button) node).setOnAction(event -> {
                 try {
-                    System.out.println("clicked on enemy board");
-                    player.makeMove(GridPane.getColumnIndex(node), GridPane.getRowIndex(node));
+                    if (player.isMoving()) {
+                        System.out.println("clicked on enemy board");
+                        player.makeMove(GridPane.getColumnIndex(node), GridPane.getRowIndex(node));
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
         }
+    }
+
+    private void handleMouseClick(Button button, int row, int col, MouseButton buttonType) {
+        int[] ships = playerBoard.getShips();
+        int id = 0;
+        while (ships[id] == 0) id += 1;
+        playerBoard.placeShip(new Ship(id + 1, buttonType == MouseButton.PRIMARY), col, row);
+        ships[id] -= 1;
     }
 
 

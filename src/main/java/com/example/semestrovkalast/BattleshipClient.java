@@ -11,7 +11,6 @@ import java.net.Socket;
 public class BattleshipClient {
     private Socket socket;
 
-    //    private BufferedWriter output;
     private Player player;
     private int gameRoomID;
     private BattleshipUI gameUI;

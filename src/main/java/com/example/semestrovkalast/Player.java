@@ -15,6 +15,7 @@ public class Player implements Serializable {
     private String name;
     private Socket playerSocket;
     private boolean isReady = false;
+    private boolean isMoving = false;
     private int id;
     private int[] message = null;
     private boolean isWinner = false;
@@ -113,6 +114,14 @@ public class Player implements Serializable {
 
     public void setRoomID(int roomID) {
         this.roomID = roomID;
+    }
+
+    public boolean isMoving() {
+        return isMoving;
+    }
+
+    public void setMoving(boolean moving) {
+        this.isMoving = moving;
     }
 }
 
