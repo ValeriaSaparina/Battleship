@@ -1,13 +1,19 @@
 package com.example.semestrovkalast;
 
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -21,10 +27,13 @@ public class BattleshipUI extends Application {
     private boolean isStart = false;
     private int gameRoomID = 9;
     private boolean end = true;
+
+    private StringProperty notification;
 //    private GameRoom gameRoom;
 
     public BattleshipUI(Player player, GameRoom gameRoom) {
         this.player = player;
+        this.notification = new SimpleStringProperty("Place 10 ships");
         System.out.println("moving in constructor: " + player.isMoving());
 //        this.gameRoom = gameRoom;
     }
@@ -91,19 +100,30 @@ public class BattleshipUI extends Application {
     private HBox gethBox() {
         Button startButton = new Button("Start Game");
         startButton.setOnAction(event -> {
-            startButton.setVisible(false);
-            try {
-                player.setCharGameBoard();
-                ObjectOutputStream toServer = new ObjectOutputStream(player.getPlayerSocket().getOutputStream());
-                toServer.writeObject(new Message(gameRoomID, player.getId(), player.getCharGameBoard(), Params.READY));
-                toServer.flush();
-                player.setReady(true);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            if (player.getNumberShips() == 10) {
+                startButton.setVisible(false);
+                try {
+                    player.setCharGameBoard();
+                    ObjectOutputStream toServer = new ObjectOutputStream(player.getPlayerSocket().getOutputStream());
+                    toServer.writeObject(new Message(gameRoomID, player.getId(), player.getCharGameBoard(), Params.READY));
+                    toServer.flush();
+                    player.setReady(true);
+                    notification.set("Waiting enemy");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                notification.set("place all 10 ships");
+                System.out.println("place all 10 ships");
             }
         });
 
-        HBox hBox = new HBox(playerBoard.getBoard(), startButton, enemyBoard.getBoard());
+        Label notification = new Label();
+        notification.textProperty().bind(notificationProperty());
+
+        VBox vBox = new VBox(startButton, notification);
+
+        HBox hBox = new HBox(playerBoard.getBoard(), vBox, enemyBoard.getBoard());
         hBox.setSpacing(10);
         hBox.setPadding(new Insets(10, 10, 10, 10));
         return hBox;
@@ -174,36 +194,6 @@ public class BattleshipUI extends Application {
 
     }
 
-    private void updateActionForEnemyBoardOriginal() {
-        System.out.println("enemy upd");
-        List<Node> nodes = enemyBoard.getBoard().getChildren();
-        for (Node node : nodes) {
-            ((Button) node).setOnMousePressed(event -> {
-                try {
-                    System.out.println("player.isMoving() " + player.isMoving());
-                    System.out.println("player.id in move: " + player.getId());
-                    if (player.isMoving()) {
-                        System.out.println("clicked on enemy board");
-                        player.makeMove(GridPane.getColumnIndex(node), GridPane.getRowIndex(node));
-//                        BufferedReader fromServer = new BufferedReader(new InputStreamReader(player.getPlayerSocket().getInputStream()));
-//                        String response = fromServer.readLine();
-//                        ObjectInputStream fromServer = new ObjectInputStream(player.getPlayerSocket().getInputStream());
-//                        String response = ((Message) fromServer.readObject()).getStatus();
-//                        System.out.println("status in UI: " + response);
-//                        if (!response.equals(Params.ERROR)) {
-//                            updateBoardUI(node, response);
-//                        }
-//                        this.end = true;
-//                        System.out.println("end: " + end);
-                        node.setDisable(true);
-                    }
-                } catch (IOException /*| ClassNotFoundException*/ e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-    }
-
     private void updateActionForEnemyBoard() {
         System.out.println("enemy upd");
         List<Node> nodes = enemyBoard.getBoard().getChildren();
@@ -239,7 +229,10 @@ public class BattleshipUI extends Application {
         int[] ships = playerBoard.getShips();
         int id = 0;
         while (ships[id] == 0) id += 1;
-        if (playerBoard.placeShip(new Ship(id + 1, buttonType == MouseButton.PRIMARY), col, row)) ships[id] -= 1;
+        if (playerBoard.placeShip(new Ship(id + 1, buttonType == MouseButton.PRIMARY), col, row)) {
+            ships[id] -= 1;
+            player.incNumberShips();
+        }
     }
 
 
@@ -259,6 +252,20 @@ public class BattleshipUI extends Application {
 
     public Board getEnemyBoard() {
         return enemyBoard;
+    }
+
+    public String getNotification() {
+        return notification.get();
+    }
+
+    public StringProperty notificationProperty() {
+        return notification;
+    }
+
+    public void setNotification(String notification) {
+        Platform.runLater(() -> {
+            this.notification.set(notification);
+        });
     }
 }
 

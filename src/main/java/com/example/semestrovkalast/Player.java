@@ -25,6 +25,7 @@ public class Player implements Serializable {
     private char[][] charGameBoard = new char[10][10];
     private GameRoom gameRoom;
     private int roomID;
+    private int numberShips;
 
     public Player(Socket playerSocket) {
         this.playerSocket = playerSocket;
@@ -123,6 +124,22 @@ public class Player implements Serializable {
             String text = ((Button) node).getText();
             charGameBoard[GridPane.getColumnIndex(node)][GridPane.getRowIndex(node)] = !text.isEmpty() ? text.charAt(0) : ' ';
         }
+    }
+
+    public void decNumberShips() {
+        numberShips -= 1;
+    }
+
+    public void incNumberShips() {
+        numberShips += 1;
+    }
+
+    public int getNumberShips() {
+        return numberShips;
+    }
+
+    public void setNumberShips(int numberShips) {
+        this.numberShips = numberShips;
     }
 }
 

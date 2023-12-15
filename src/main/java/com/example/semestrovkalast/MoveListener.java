@@ -28,7 +28,8 @@ public class MoveListener {
 
     public void readingMessages() {
         System.out.println("Reading message is started");
-        while (true) {
+        boolean noWinner = true;
+        while (noWinner) {
             int listSize = socketsList.size();
             int i = 0;
             while (i < listSize) {
@@ -89,6 +90,7 @@ public class MoveListener {
                         message = new Message(col, row, status);
                         if (status.equals(Params.DESTROYED)) {
                             message.setMessage(updCells);
+                            enemy.decNumberShips();
                         }
                         toClientEnemyObj.writeObject(message);
                         toClientEnemyObj.flush();
@@ -100,11 +102,16 @@ public class MoveListener {
                         whoMove = 1 - whoMove;
                         System.out.println("i: " + i + "; whoMove: " + whoMove);
 
+                        noWinner = enemy.getNumberShips() != 0;
+                        toClientPlayerObj.writeBoolean(noWinner);
+                        toClientPlayerObj.flush();
+                        toClientEnemyObj.writeBoolean(noWinner);
+                        toClientEnemyObj.flush();
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 } catch (IOException | ClassNotFoundException e) {
-                    // TODO: notification error
                 }
             }
         }
@@ -160,7 +167,6 @@ public class MoveListener {
                 r += 1;
             }
         }
-        // TODO: add health
         return true;
 
     }

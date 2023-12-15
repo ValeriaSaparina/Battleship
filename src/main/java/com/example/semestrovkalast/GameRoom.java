@@ -52,6 +52,11 @@ public class GameRoom implements Runnable {
 
     private void startGame() {
         System.out.println("Game start");
+
+        for (Player player : playerList.values()) {
+            player.setNumberShips(10);
+        }
+
 //        int whoMove = (new Random()).nextInt(2);
         int whoMove = 0;
         System.out.println("moving: " + whoMove);
@@ -76,7 +81,6 @@ public class GameRoom implements Runnable {
 //                }
 //            }
 //        }
-//        TODO: smth like change setOnAction()
     }
 
 
@@ -86,7 +90,6 @@ public class GameRoom implements Runnable {
     }
 
     public void addPlayer(Player player) {
-        // TODO: get ID from server
         playerList.put(playerID, player);
         playerID += 1;
     }
