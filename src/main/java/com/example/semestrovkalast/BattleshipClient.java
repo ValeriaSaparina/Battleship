@@ -81,9 +81,11 @@ public class BattleshipClient {
                     if (rrr instanceof Message response) {
                         System.out.println("status in UI: " + response.getStatus());
                         if (player.getId() == whoMove) {
-                            gameUI.updateBoardUI(response.getCol(), response.getRow(), gameUI.getEnemyBoard().getBoard(), response.getStatus());
+                           gameUI.updateBoardUI(response, gameUI.getEnemyBoard().getBoard());
+//                            gameUI.updateBoardUI(response.getCol(), response.getRow(), gameUI.getEnemyBoard().getBoard(), response.getStatus());
                         } else {
-                            gameUI.updateBoardUI(response.getCol(), response.getRow(), player.getGameBoard().getBoard(), response.getStatus());
+                            gameUI.updateBoardUI(response, player.getGameBoard().getBoard());
+//                            gameUI.updateBoardUI(response.getCol(), response.getRow(), player.getGameBoard().getBoard(), response.getStatus());
                         }
                     } else {
                         System.out.println(rrr.toString());

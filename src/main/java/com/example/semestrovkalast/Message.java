@@ -12,6 +12,7 @@ public class Message implements Serializable {
     private int row;
     private String status;
     private char[][] charGameBoard;
+    private String message;
 
 //    public Message(int idRoom, int idEnemy, String status) {
 //        this.idRoom = idRoom;
@@ -93,5 +94,13 @@ public class Message implements Serializable {
                 ", status='" + status + '\'' +
                 ", charGameBoard=" + Arrays.toString(charGameBoard) +
                 '}';
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
     }
 }

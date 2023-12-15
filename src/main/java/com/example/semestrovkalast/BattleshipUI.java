@@ -49,23 +49,26 @@ public class BattleshipUI extends Application {
         return null;  // Return null if the button is not found at the specified position
     }
 
-    public boolean updateBoardUI(int col, int row, GridPane board, String message) {
-        Button button = getButtonFromGridPane(col, row, board);
+    public void updateBoardUI(Message message, /*int col, int row,*/ GridPane board/*, String message*/) {
+        Button button = getButtonFromGridPane(message.getCol(), message.getRow(), board);
+        String status = message.getStatus();
         if (button != null) {
-            if (message.equals(Params.DESTROYED)) {
-                button.setStyle("-fx-background-color: darkgray;");
-                return true;
+            if (status.equals(Params.DESTROYED)) {
+                button.setStyle("-fx-background-color: black;");
+                if (message.getMessage() != null) {
+                    String[] cells = message.getMessage().split(" ");
+                    for (int i = 0; i < cells.length - 1; i += 2) {
+                        getButtonFromGridPane(Integer.parseInt(cells[i]), Integer.parseInt(cells[i + 1]), board).setStyle("-fx-background-color: black;");
+                    }
+                }
             } else {
-                if (message.equals(Params.MISS)) {
+                if (status.equals(Params.MISS)) {
                     button.setStyle("-fx-background-color: lightblue;");
-                    return true;
-                } else {
+                } else if (status.equals(Params.HIT)) {
                     button.setStyle("-fx-background-color: red;");
-                    return true;
                 }
             }
         }
-        return false;
     }
 
     public void updateBoardUI(Node node, String message) {

@@ -27,11 +27,8 @@ public class MoveListener {
 
 
     public void readingMessages() {
-//        socketsList = Collections.synchronizedList(socketsList);
-//        new Thread(() -> {
         System.out.println("Reading message is started");
         while (true) {
-//                List<Socket> allSockets = battleshipServer.getAllSockets();
             int listSize = socketsList.size();
             int i = 0;
             while (i < listSize) {
@@ -51,12 +48,6 @@ public class MoveListener {
                         toClientEnemy.write(Params.SUCCESS + "\n");
                         toClientEnemy.flush();
                         System.out.println("send message to player that connect is success");
-//                            System.out.println("whoMove in sending: " + whoMove);
-//                            toClientPlayer.write(whoMove + "\n");
-//                            toClientPlayer.flush();
-//                            toClientEnemy.write(whoMove + "\n");
-//                            toClientEnemy.flush();
-//                            System.out.println("message who first moving was sent");
                         firstIter = false;
                     }
 
@@ -71,7 +62,6 @@ public class MoveListener {
                     Message message = (Message) fromClient.readObject();
                     System.out.println("server message from user: " + message.getIdSender() + " move: " + message.getMove() + " roomID: " + message.getIdRoom());
 
-//                        Player enemy = gameRoom.getPlayer(1 - socketsList.indexOf(client));
                     char[][] enemyGameBoard = enemy.getCharGameBoard();
                     int col = message.getCol();
                     int row = message.getRow();
@@ -82,22 +72,34 @@ public class MoveListener {
                         ObjectOutputStream toClientPlayerObj = new ObjectOutputStream(client.getOutputStream());
                         ObjectOutputStream toClientEnemyObj = new ObjectOutputStream(enemy.getPlayerSocket().getOutputStream());
 
-                        if (isShot(cell)) {
-                            System.out.println("we are in 'inShot'");
-                            toClientPlayerObj.writeObject(Params.ERROR + "\n");
-                            toClientPlayerObj.flush();
+                        String status;
+                        String updCells = null;
+                        if (isEmpty(cell)) {
+                            status = Params.MISS;
                         } else {
-                            String status = Params.HIT;
-                            toClientEnemyObj.writeObject(new Message(col, row, status));
-                            toClientEnemyObj.flush();
-                            System.out.println("enemy sent");
-                            toClientPlayerObj.writeObject(new Message(col, row, status));
-                            toClientPlayerObj.flush();
-                            System.out.println("player sent + " + System.nanoTime());
-                            i = (i + 1) % listSize;
-                            whoMove = 1 - whoMove;
-                            System.out.println("i: " + i + "; whoMove: " + whoMove);
+                            enemyGameBoard[col][row] = 'h';
+                            if (isDestroyed(col, row, enemyGameBoard)) {
+                                status = Params.DESTROYED;
+                                updCells = getUpdateCells(col, row, enemyGameBoard);
+                                System.out.println(updCells);
+                            } else status = Params.HIT;
                         }
+                        System.out.println("status in server AAAAAAAAAAAAA: " + status);
+                        updateCharGameBoard(enemyGameBoard, col, row, status);
+                        message = new Message(col, row, status);
+                        if (status.equals(Params.DESTROYED)) {
+                            message.setMessage(updCells);
+                        }
+                        toClientEnemyObj.writeObject(message);
+                        toClientEnemyObj.flush();
+                        System.out.println("enemy sent");
+                        toClientPlayerObj.writeObject(message);
+                        toClientPlayerObj.flush();
+                        System.out.println("player sent + " + System.nanoTime());
+                        i = (i + 1) % listSize;
+                        whoMove = 1 - whoMove;
+                        System.out.println("i: " + i + "; whoMove: " + whoMove);
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -106,63 +108,119 @@ public class MoveListener {
                 }
             }
         }
-//        }).start();
     }
 
-    private boolean isShot(char c) {
-        System.out.println("isShot. text cell: " + c);
-        if (c == ' ') return false;
+    private boolean isDestroyed(int col, int row, char[][] enemyGameBoard) {
+        int c = col - 1;
+        int r = row;
+        int size = 1;
+
+
+        while (c >= 0 && enemyGameBoard[c][r] != 'm' && enemyGameBoard[c][r] != ' ') {
+            if (enemyGameBoard[c][r] == 'X') {
+                return false;
+            }
+            if (enemyGameBoard[c][r] == 'h') {
+                size += 1;
+            }
+            c -= 1;
+        }
+        c = col + 1;
+        while (c < enemyGameBoard.length && enemyGameBoard[c][r] != 'm' && enemyGameBoard[c][r] != ' ') {
+            if (enemyGameBoard[c][r] == 'X') {
+                return false;
+            }
+            if (enemyGameBoard[c][r] == 'h') {
+                size += 1;
+                c += 1;
+            }
+        }
+        c = col;
+
+        if (size != 1) return true;
+
+        r = row - 1;
+        while (r >= 0 && enemyGameBoard[c][r] != 'm' && enemyGameBoard[c][r] != ' ' && r < enemyGameBoard.length) {
+            if (enemyGameBoard[c][r] == 'X') {
+                return false;
+            }
+            if (enemyGameBoard[c][r] == 'h') {
+                size += 1;
+                r -= 1;
+            }
+        }
+
+        r = row + 1;
+        while (r < enemyGameBoard.length && enemyGameBoard[c][r] != 'm' && enemyGameBoard[c][r] != ' ') {
+            if (enemyGameBoard[c][r] == 'X') {
+                return false;
+            }
+            if (enemyGameBoard[c][r] == 'h') {
+                size += 1;
+                r += 1;
+            }
+        }
+        // TODO: add health
         return true;
 
     }
 
-    public void processingMessages() {
-        new Thread(() -> {
-            System.out.println("Obrabotka message is started");
-            while (true) {
-                Message message = messagesPool.poll();
-                if (message != null) {
-                    GameRoom room = battleshipServer.getRoom(message.getIdRoom());
-                    Player enemy = room.getPlayer(message.getIdEnemy());
-                    Board enemyGameBoard = enemy.getGameBoard();
-                    int col = message.getCol();
-                    int row = message.getRow();
-                    Player sender = room.getPlayer(message.getIdSender());
-                    try {
-                        ObjectOutputStream fromServer = new ObjectOutputStream(sender.getPlayerSocket().getOutputStream());
-                        if (enemyGameBoard.isShot(col, row)) {
-                            fromServer.writeObject(new Message(Params.ERROR));
-                        } else {
-//                            enemyGameBoard.move(col, row);
-                            fromServer.writeObject(new Message(Params.HIT));
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).start();
+    private void updateCharGameBoard(char[][] board, int col, int row, String status) {
+        if (status.equals(Params.MISS)) {
+            board[col][row] = 'm';
+            return;
+        }
+        if (status.equals(Params.HIT)) {
+            board[col][row] = 'h';
+            return;
+        }
+        if (status.equals(Params.DESTROYED)) {
+            board[col][row] = 'd';
+        }
+    }
+
+    private String getUpdateCells(int col, int row, char[][] board) {
+        String res = "";
+        int c = col - 1;
+        int r = row;
+        while (c >= 0 && board[c][r] == 'h') {
+            board[c][r] = 'd';
+            res += (c + " " + r + " ");
+            c -= 1;
+        }
+        c = col + 1;
+        while (c < board.length && board[c][r] == 'h') {
+            board[c][r] = 'd';
+            res += (c + " " + r + " ");
+            c += 1;
+        }
+        c = col;
+        r = row - 1;
+        while (r >= 0 && board[c][r] == 'h') {
+            board[c][r] = 'd';
+            res += (c + " " + r + " ");
+            r -= 1;
+        }
+        r = row + 1;
+        while (r < board.length && board[c][r] == 'h') {
+            board[c][r] = 'd';
+            res += (c + " " + r + " ");
+            r += 1;
+        }
+        return res;
+    }
+
+    private boolean isEmpty(char c) {
+        return c == ' ';
+
     }
 
     public void setSockets(List<Socket> list) {
         socketsList.addAll(list);
     }
 
-    public int getWhoMove() {
-        return whoMove;
-    }
-
     public void setWhoMove(int whoMove) {
         this.whoMove = whoMove;
     }
 
-//    public void addInput(Socket clientSocket) {
-//        try {
-//            ObjectInputStream
-//            fromClients.add(new ObjectInputStream(clientSocket.getInputStream()));
-//            System.out.println("in the end of adding");
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
 }
