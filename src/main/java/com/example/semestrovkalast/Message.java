@@ -1,6 +1,7 @@
 package com.example.semestrovkalast;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class Message implements Serializable {
 
@@ -10,7 +11,7 @@ public class Message implements Serializable {
     private int col;
     private int row;
     private String status;
-    private String move; //TODO: replace String to Move class;
+    private char[][] charGameBoard;
 
 //    public Message(int idRoom, int idEnemy, String status) {
 //        this.idRoom = idRoom;
@@ -18,9 +19,10 @@ public class Message implements Serializable {
 //        this.status = status;
 //    }
 
-    public Message(int idRoom, int idSender, String status) {
+    public Message(int idRoom, int idSender, char[][] charGameBoard, String status) {
         this.idRoom = idRoom;
         this.idSender = idSender;
+        this.charGameBoard = charGameBoard;
         this.status = status;
     }
 
@@ -38,6 +40,12 @@ public class Message implements Serializable {
         this.status = status;
     }
 
+    public Message(int col, int row, String status) {
+        this.col = col;
+        this.row = row;
+        this.status = status;
+    }
+
     public int getIdRoom() {
         return idRoom;
     }
@@ -47,7 +55,7 @@ public class Message implements Serializable {
     }
 
     public String getMove() {
-        return move;
+        return col + " " + row;
     }
 
     public int getIdSender() {
@@ -64,5 +72,26 @@ public class Message implements Serializable {
 
     public String getStatus() {
         return status;
+    }
+
+    public char[][] getCharGameBoard() {
+        return charGameBoard;
+    }
+
+    public void setCharGameBoard(char[][] charGameBoard) {
+        this.charGameBoard = charGameBoard;
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "idRoom=" + idRoom +
+                ", idEnemy=" + idEnemy +
+                ", idSender=" + idSender +
+                ", col=" + col +
+                ", row=" + row +
+                ", status='" + status + '\'' +
+                ", charGameBoard=" + Arrays.toString(charGameBoard) +
+                '}';
     }
 }

@@ -2,8 +2,7 @@ package com.example.semestrovkalast;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 public class StartListener implements Runnable {
@@ -44,8 +43,7 @@ public class StartListener implements Runnable {
         t1.start();
         t2.start();
 
-        while (t1.isAlive() || t2.isAlive()) {
-        }
+        while (t1.isAlive() || t2.isAlive()) {}
 
         gameRoom.setReady(true);
     }
@@ -57,6 +55,8 @@ public class StartListener implements Runnable {
                 if (message instanceof Message) {
                     if (((Message) message).getStatus().equals(Params.READY)) {
                         player.setReady(true);
+                        player.setCharGameBoard(((Message) message).getCharGameBoard());
+                        System.out.println(Arrays.deepToString(player.getCharGameBoard()));
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {

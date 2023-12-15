@@ -1,6 +1,8 @@
 package com.example.semestrovkalast;
 
+import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.control.Button;
 import javafx.scene.layout.GridPane;
 
 import java.io.IOException;
@@ -20,18 +22,13 @@ public class Player implements Serializable {
     private int[] message = null;
     private boolean isWinner = false;
     private Board gameBoard;
+    private char[][] charGameBoard = new char[10][10];
     private GameRoom gameRoom;
     private int roomID;
 
     public Player(Socket playerSocket) {
         this.playerSocket = playerSocket;
         this.name = "Name of player";
-    }
-
-    public Player(String name, Socket playerSocket) {
-        this(playerSocket);
-        this.name = name;
-        // Initialize the game board and place ships as needed
     }
 
     public GameRoom getGameRoom() {
@@ -65,24 +62,12 @@ public class Player implements Serializable {
         this.gameBoard = gameBoard;
     }
 
-//    @Override
-//    public String toString() {
-//        return "Player{" +
-//                "name='" + name + '\'' +
-//                ",\nplayerSocket=" + playerSocket +
-////                ",\ngameBoard=" + Arrays.toString(gameBoard.getBoard().getChildren().toArray()) +
-//                ",\nisReady=" + isReady +
-//                ",\nmessage=" + Arrays.toString(message) +
-//                ",\nisWinner=" + isWinner +
-//                '}';
-//    }
-
     public void makeMove(Integer columnIndex, Integer rowIndex) throws IOException {
         Message message = new Message(roomID, id, columnIndex, rowIndex, Params.SHOT);
+        System.out.println("message from user: " + id + " move: " + message.getMove());
         ObjectOutputStream output = new ObjectOutputStream(playerSocket.getOutputStream());
         output.writeObject(message);
         output.flush();
-        System.out.println(message);
     }
 
     public int[] move() {
@@ -122,6 +107,22 @@ public class Player implements Serializable {
 
     public void setMoving(boolean moving) {
         this.isMoving = moving;
+    }
+
+    public char[][] getCharGameBoard() {
+        return charGameBoard;
+    }
+
+    public void setCharGameBoard(char[][] charGameBoard) {
+        this.charGameBoard = charGameBoard;
+    }
+
+    public void setCharGameBoard() {
+        GridPane gridPane = gameBoard.getBoard();
+        for (Node node : gridPane.getChildren()) {
+            String text = ((Button) node).getText();
+            charGameBoard[GridPane.getColumnIndex(node)][GridPane.getRowIndex(node)] = !text.isEmpty() ? text.charAt(0) : ' ';
+        }
     }
 }
 

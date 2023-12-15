@@ -11,7 +11,7 @@ import java.util.List;
 
 public class Board {
     private GridPane board;
-    private int[] ships = new int[] {4, 3, 2, 1};
+    private int[] ships = new int[]{4, 3, 2, 1};
 //                                   1, 2, 3, 4
 
     public Board(GridPane board) {
@@ -32,10 +32,9 @@ public class Board {
             if (ship.vertical) {
                 for (int i = y; i < y + length; i++) {
                     Button btn = getCell(x, i);
-                        btn.setText("X");
+                    btn.setText("X");
                 }
-            }
-            else {
+            } else {
                 for (int i = x; i < x + length; i++) {
                     Button btn = getCell(i, y);
                     btn.setText("X");
@@ -68,8 +67,7 @@ public class Board {
                         return false;
                 }
             }
-        }
-        else {
+        } else {
             for (int i = x; i < x + length; i++) {
                 if (!isValidPoint(i, y))
                     return false;
@@ -92,18 +90,22 @@ public class Board {
     }
 
     private Button[] getNeighbors(int x, int y) {
-        Point2D[] points = new Point2D[] {
+        Point2D[] points = new Point2D[]{
                 new Point2D(x - 1, y),
                 new Point2D(x + 1, y),
                 new Point2D(x, y - 1),
-                new Point2D(x, y + 1)
+                new Point2D(x, y + 1),
+                new Point2D(x + 1, y + 1),
+                new Point2D(x + 1, y - 1),
+                new Point2D(x - 1, y - 1),
+                new Point2D(x - 1, y + 1),
         };
 
         List<Button> neighbors = new ArrayList<>();
 
         for (Point2D p : points) {
             if (isValidPoint(p)) {
-                neighbors.add(getCell((int)p.getX(), (int)p.getY()));
+                neighbors.add(getCell((int) p.getX(), (int) p.getY()));
             }
         }
 
@@ -118,7 +120,8 @@ public class Board {
         return x >= 0 && x < 10 && y >= 0 && y < 10;
     }
 
-    private void updateBoard() {}
+    private void updateBoard() {
+    }
 
     public GridPane getBoard() {
         return board;
