@@ -1,7 +1,6 @@
 package com.example.semestrovkalast;
 
 import javafx.application.Platform;
-import javafx.scene.control.skin.TableHeaderRow;
 import javafx.stage.Stage;
 
 import java.io.BufferedReader;
@@ -37,17 +36,23 @@ public class BattleshipClient {
 //                gameUI.updateSetOnActions();
 //            }
 
-            System.out.println("before reading from server: " + System.nanoTime());
-            String status = fromServerString.readLine();
-            System.out.println("message from server has been received: " + status);
-
-            if (status.equals(Params.SUCCESS)) {
-                System.out.println("SUCCESS has been received");
-                gameUI.updateSetOnActions();
-            }
-
-            boolean noWinner = true;
+            while (true) {
+                boolean noWinner = true;
+                boolean isFirst = true;
                 while (noWinner) {
+
+                    if (isFirst) {
+                        System.out.println("before reading from server: " + System.nanoTime());
+                        String status = fromServerString.readLine();
+                        System.out.println("message from server has been received: " + status);
+
+                        if (status.equals(Params.SUCCESS)) {
+                            System.out.println("SUCCESS has been received");
+                            gameUI.updateSetOnActions();
+                        }
+                        isFirst = false;
+                    }
+
 
                     int whoMove = Integer.parseInt(fromServerString.readLine());
                     System.out.println("whoMove from server: " + whoMove);
@@ -55,7 +60,7 @@ public class BattleshipClient {
                     if (whoMove == player.getId()) {
                         System.out.println("setting ready");
                         gameUI.setNotification("Your turn");
-//                    player.setReady(true);
+    //                    player.setReady(true);
                         player.setMoving(true);
                     } else {
                         gameUI.setNotification("enemy's turn");
@@ -67,7 +72,7 @@ public class BattleshipClient {
                     if (rrr instanceof Message response) {
                         System.out.println("status in UI: " + response.getStatus());
                         if (player.getId() == whoMove) {
-                           gameUI.updateBoardUI(response, gameUI.getEnemyBoard().getBoard());
+                            gameUI.updateBoardUI(response, gameUI.getEnemyBoard().getBoard());
                         } else {
                             gameUI.updateBoardUI(response, player.getGameBoard().getBoard());
                         }
@@ -85,7 +90,27 @@ public class BattleshipClient {
                     gameUI.setNotification("You're lose");
                 }
 
-//            }
+                gameUI.showRestartButton();
+                long endTime = System.currentTimeMillis();
+                while ((System.currentTimeMillis() - endTime) / 1000 / 60 < 10) {
+                    System.out.println("waiting");
+                    if (gameUI.isRestart()) {
+                        System.out.println("isReady");
+                        Platform.runLater(() -> {
+                            player.setNumberShips(0);
+                            player.setMoving(false);
+                            player.setReady(false);
+                            gameUI.initUI();
+    //                        gameUI.closeWindow();
+                        });
+                        isFirst = true;
+                        noWinner = true;
+                        gameUI.setRestart(false);
+                        break;
+                    }
+
+                }
+            }
 
         } catch (IOException e) {
             e.printStackTrace();

@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MoveListener {
@@ -29,89 +30,113 @@ public class MoveListener {
     public void readingMessages() {
         System.out.println("Reading message is started");
         boolean noWinner = true;
-        while (noWinner) {
-            int listSize = socketsList.size();
-            int i = 0;
-            while (i < listSize) {
-                System.out.println("getting sockets");
-                Socket client = socketsList.get(i);
-                Player enemy = gameRoom.getPlayer(listSize - i - 1);
-                System.out.println("enemyID: " + (listSize - i - 1));
-                System.out.println("sockets was got");
-                try {
-                    BufferedWriter toClientPlayer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
-                    BufferedWriter toClientEnemy = new BufferedWriter(new OutputStreamWriter(enemy.getPlayerSocket().getOutputStream()));
-                    System.out.println("toClient and toEnemy were got");
-
-                    if (firstIter) {
-                        toClientPlayer.write(Params.SUCCESS + "\n");
-                        toClientPlayer.flush();
-                        toClientEnemy.write(Params.SUCCESS + "\n");
-                        toClientEnemy.flush();
-                        System.out.println("send message to player that connect is success");
-                        firstIter = false;
-                    }
-
-                    System.out.println("whoMove in sending: " + whoMove);
-                    toClientPlayer.write(whoMove + "\n");
-                    toClientPlayer.flush();
-                    toClientEnemy.write(whoMove + "\n");
-                    toClientEnemy.flush();
-                    System.out.println("message who first moving was sent");
-
-                    ObjectInputStream fromClient = new ObjectInputStream(client.getInputStream());
-                    Message message = (Message) fromClient.readObject();
-                    System.out.println("server message from user: " + message.getIdSender() + " move: " + message.getMove() + " roomID: " + message.getIdRoom());
-
-                    char[][] enemyGameBoard = enemy.getCharGameBoard();
-                    int col = message.getCol();
-                    int row = message.getRow();
-                    System.out.println("col: " + col + "; row: " + row);
-                    char cell = enemyGameBoard[col][row];
-
+        while (true) {
+            while (noWinner) {
+                int listSize = socketsList.size();
+                int i = 0;
+                while (i < listSize) {
+                    System.out.println("getting sockets");
+                    Socket client = socketsList.get(i);
+                    Player enemy = gameRoom.getPlayer(listSize - i - 1);
+                    System.out.println("enemyID: " + (listSize - i - 1));
+                    System.out.println("sockets was got");
                     try {
-                        ObjectOutputStream toClientPlayerObj = new ObjectOutputStream(client.getOutputStream());
-                        ObjectOutputStream toClientEnemyObj = new ObjectOutputStream(enemy.getPlayerSocket().getOutputStream());
+                        BufferedWriter toClientPlayer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
+                        BufferedWriter toClientEnemy = new BufferedWriter(new OutputStreamWriter(enemy.getPlayerSocket().getOutputStream()));
+                        System.out.println("toClient and toEnemy were got");
 
-                        String status;
-                        String updCells = null;
-                        if (isEmpty(cell)) {
-                            status = Params.MISS;
-                        } else {
-                            enemyGameBoard[col][row] = 'h';
-                            if (isDestroyed(col, row, enemyGameBoard)) {
-                                status = Params.DESTROYED;
-                                updCells = getUpdateCells(col, row, enemyGameBoard);
-                                System.out.println(updCells);
-                            } else status = Params.HIT;
+                        if (firstIter) {
+                            toClientPlayer.write(Params.SUCCESS + "\n");
+                            toClientPlayer.flush();
+                            toClientEnemy.write(Params.SUCCESS + "\n");
+                            toClientEnemy.flush();
+                            System.out.println("send message to player that connect is success");
+                            firstIter = false;
                         }
-                        System.out.println("status in server AAAAAAAAAAAAA: " + status);
-                        updateCharGameBoard(enemyGameBoard, col, row, status);
-                        message = new Message(col, row, status);
-                        if (status.equals(Params.DESTROYED)) {
-                            message.setMessage(updCells);
-                            enemy.decNumberShips();
+
+                        System.out.println("whoMove in sending: " + whoMove);
+                        toClientPlayer.write(whoMove + "\n");
+                        toClientPlayer.flush();
+                        toClientEnemy.write(whoMove + "\n");
+                        toClientEnemy.flush();
+                        System.out.println("message who first moving was sent");
+
+                        System.out.println("enemy: " + enemy.getId());
+                        ObjectInputStream fromClient = new ObjectInputStream(client.getInputStream());
+                        System.out.println("ХМММММММ");
+                        Message message = (Message) fromClient.readObject();
+                        System.out.println("ХМММММММ2");
+                        System.out.println("server message from user: " + message.getIdSender() + " move: " + message.getMove() + " roomID: " + message.getIdRoom());
+
+                        char[][] enemyGameBoard = enemy.getCharGameBoard();
+                        int col = message.getCol();
+                        int row = message.getRow();
+                        System.out.println("col: " + col + "; row: " + row);
+                        char cell = enemyGameBoard[col][row];
+
+                        try {
+                            ObjectOutputStream toClientPlayerObj = new ObjectOutputStream(client.getOutputStream());
+                            ObjectOutputStream toClientEnemyObj = new ObjectOutputStream(enemy.getPlayerSocket().getOutputStream());
+
+                            String status;
+                            String updCells = null;
+                            if (isEmpty(cell)) {
+                                status = Params.MISS;
+                            } else {
+                                enemyGameBoard[col][row] = 'h';
+                                if (isDestroyed(col, row, enemyGameBoard)) {
+                                    status = Params.DESTROYED;
+                                    updCells = getUpdateCells(col, row, enemyGameBoard);
+                                    System.out.println(updCells);
+                                } else status = Params.HIT;
+                            }
+                            System.out.println("status in server AAAAAAAAAAAAA: " + status);
+                            updateCharGameBoard(enemyGameBoard, col, row, status);
+                            message = new Message(col, row, status);
+                            if (status.equals(Params.DESTROYED)) {
+                                message.setMessage(updCells);
+                                enemy.decNumberShips();
+                            }
+                            toClientEnemyObj.writeObject(message);
+                            toClientEnemyObj.flush();
+                            System.out.println("enemy sent");
+                            toClientPlayerObj.writeObject(message);
+                            toClientPlayerObj.flush();
+                            System.out.println("player sent + " + System.nanoTime());
+                            i = (i + 1) % listSize;
+                            whoMove = 1 - whoMove;
+                            System.out.println("i: " + i + "; whoMove: " + whoMove);
+
+                            noWinner = enemy.getNumberShips() != 0;
+                            toClientPlayerObj.writeBoolean(noWinner);
+                            toClientPlayerObj.flush();
+                            toClientEnemyObj.writeBoolean(noWinner);
+                            toClientEnemyObj.flush();
+
+                            if (!noWinner) {
+                                System.out.println("winner has been gotten");
+                                Player player = gameRoom.getPlayer(i);
+                                Thread.sleep(3000);
+//                                Thread startListener = new Thread(new StartListener(battleshipServer, gameRoom));
+//                                startListener.start();
+                                new StartListener(battleshipServer, gameRoom).run();
+                                System.out.println("listener is start");
+//                                startListener.join();
+                                noWinner = true;
+                                firstIter = true;
+//                                setWhoMove();
+                                whoMove = 0;
+                                enemy.setNumberShips(10);
+                                player.setNumberShips(10);
+//                                enemy.setReady(false);
+                                break;
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
-                        toClientEnemyObj.writeObject(message);
-                        toClientEnemyObj.flush();
-                        System.out.println("enemy sent");
-                        toClientPlayerObj.writeObject(message);
-                        toClientPlayerObj.flush();
-                        System.out.println("player sent + " + System.nanoTime());
-                        i = (i + 1) % listSize;
-                        whoMove = 1 - whoMove;
-                        System.out.println("i: " + i + "; whoMove: " + whoMove);
-
-                        noWinner = enemy.getNumberShips() != 0;
-                        toClientPlayerObj.writeBoolean(noWinner);
-                        toClientPlayerObj.flush();
-                        toClientEnemyObj.writeBoolean(noWinner);
-                        toClientEnemyObj.flush();
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } catch (IOException | ClassNotFoundException e) {
+                    } catch (IOException | ClassNotFoundException e) {}
                 }
             }
         }

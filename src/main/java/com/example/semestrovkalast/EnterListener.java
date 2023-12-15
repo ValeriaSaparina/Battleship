@@ -21,9 +21,6 @@ public class EnterListener implements Runnable {
 
     @Override
     public void run() {
-
-        // TODO: add new Thread for register players
-
         System.out.println("Accept thread is started");
         while (true) {
             try {
@@ -36,14 +33,7 @@ public class EnterListener implements Runnable {
                 gameRoom.addPlayer(player);
 
                 battleshipServer.addSocket(clientSocket);
-//                BufferedReader fromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-//                String status = fromClient.readLine();
-//                if (status.equals(Params.GET_ROOM_ID)) {
-//                    BufferedWriter output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-//                    output.write(String.valueOf(gameRoom.getId()));
-////                    output.newLine();
-//                    output.flush();
-//                }
+
                 System.out.println("room" + gameRoom.getId());
                 BufferedWriter output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
                 output.write(gameRoom.getId() + " " + idPlayer + "\n");

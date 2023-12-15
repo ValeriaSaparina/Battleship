@@ -22,22 +22,25 @@ public class StartListener implements Runnable {
     }
 
     private void initInputStreams() throws IOException {
-//        this.fromFirstPlayer = new ObjectInputStream(playerList.get(0).getPlayerSocket().getInputStream());
-//        this.fromSecondPlayer = new ObjectInputStream(playerList.get(1).getPlayerSocket().getInputStream());
-        System.out.println("init" + server.getAllSockets().get(0).isClosed());
-        this.fromFirstPlayer = new ObjectInputStream(server.getAllSockets().get(0).getInputStream());
-        this.fromSecondPlayer = new ObjectInputStream(server.getAllSockets().get(1).getInputStream());
+        this.fromFirstPlayer = new ObjectInputStream(playerList.get(0).getPlayerSocket().getInputStream());
+        this.fromSecondPlayer = new ObjectInputStream(playerList.get(1).getPlayerSocket().getInputStream());
+//        this.fromFirstPlayer = new ObjectInputStream(server.getAllSockets().get(0).getInputStream());
+//        this.fromSecondPlayer = new ObjectInputStream(server.getAllSockets().get(1).getInputStream());
     }
 
     @Override
     public void run() {
         Thread t1 = new Thread(() -> {
             System.out.println("First starListener is started");
-            readFromPlayer(playerList.get(0), fromFirstPlayer);
+            Player player = playerList.get(0);
+            player.setReady(false);
+            readFromPlayer(player, fromFirstPlayer);
         });
         Thread t2 = new Thread(() -> {
             System.out.println("Second starListener is started");
-            readFromPlayer(playerList.get(1), fromSecondPlayer);
+            Player player = playerList.get(1);
+            player.setReady(false);
+            readFromPlayer(player, fromSecondPlayer);
         });
 
         t1.start();
@@ -49,6 +52,7 @@ public class StartListener implements Runnable {
     }
 
     private void readFromPlayer(Player player, ObjectInputStream input) {
+        System.out.println("in readFromPlayer");
         while (!player.isReady()) {
             try {
                 Object message = input.readObject();

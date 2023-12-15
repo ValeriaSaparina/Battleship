@@ -12,7 +12,6 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -24,11 +23,14 @@ public class BattleshipUI extends Application {
     private Board playerBoard;
     private Board enemyBoard;
     private Player player;
-    private boolean isStart = false;
     private int gameRoomID = 9;
     private boolean end = true;
 
     private StringProperty notification;
+    private Button restart;
+    private boolean isRestart;
+    private Scene scene;
+    private Stage primaryStage;
 //    private GameRoom gameRoom;
 
     public BattleshipUI(Player player, GameRoom gameRoom) {
@@ -44,7 +46,12 @@ public class BattleshipUI extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-//        gameRoom = player.getGameRoom();
+        this.primaryStage = primaryStage;
+        initUI();
+
+    }
+
+    public void initUI() {
         initGameBoards();
         showStage(primaryStage);
     }
@@ -114,14 +121,23 @@ public class BattleshipUI extends Application {
                 }
             } else {
                 notification.set("place all 10 ships");
-                System.out.println("place all 10 ships");
+                System.out.println("place all 10 ships. Now only: " + player.getNumberShips());
             }
         });
 
         Label notification = new Label();
         notification.textProperty().bind(notificationProperty());
 
-        VBox vBox = new VBox(startButton, notification);
+
+        restart = new Button();
+        restart.setOnMousePressed(mouseEvent -> {
+            isRestart = true;
+            System.out.println("set restart");
+//            closeWindow();
+        });
+        restart.setVisible(false);
+
+        VBox vBox = new VBox(startButton, notification, restart);
 
         HBox hBox = new HBox(playerBoard.getBoard(), vBox, enemyBoard.getBoard());
         hBox.setSpacing(10);
@@ -132,7 +148,7 @@ public class BattleshipUI extends Application {
     private void showStage(Stage primaryStage) {
         primaryStage.setTitle("Battleship");
 
-        Scene scene = new Scene(gethBox(), 500, 500);
+        this.scene = new Scene(gethBox(), 500, 500);
         primaryStage.setScene(scene);
         System.out.println("in showStage");
         primaryStage.show();
@@ -207,18 +223,8 @@ public class BattleshipUI extends Application {
                         System.out.println("clicked on enemy board");
                         player.makeMove(GridPane.getColumnIndex(node), GridPane.getRowIndex(node));
                         node.setDisable(true);
-//                        BufferedReader fromServer = new BufferedReader(new InputStreamReader(player.getPlayerSocket().getInputStream()));
-//                        String response = fromServer.readLine();
-//                        ObjectInputStream fromServer = new ObjectInputStream(player.getPlayerSocket().getInputStream());
-//                        String response = ((Message) fromServer.readObject()).getStatus();
-//                        System.out.println("status in UI: " + response);
-//                        if (!response.equals(Params.ERROR)) {
-//                            updateBoardUI(node, response);
-//                        }
-//                        this.end = true;
-//                        System.out.println("end: " + end);
                     }
-                } catch (IOException /*| ClassNotFoundException */e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
@@ -258,13 +264,34 @@ public class BattleshipUI extends Application {
         return notification.get();
     }
 
+    public void setNotification(String notification) {
+        Platform.runLater(() -> {
+            this.notification.set(notification);
+        });
+    }
+
     public StringProperty notificationProperty() {
         return notification;
     }
 
-    public void setNotification(String notification) {
+    public void showRestartButton() {
         Platform.runLater(() -> {
-            this.notification.set(notification);
+            restart.setVisible(true);
+        });
+    }
+
+    public boolean isRestart() {
+        return isRestart;
+    }
+
+    public void setRestart(boolean restart) {
+        this.isRestart = restart;
+    }
+
+    public void closeWindow() {
+        Platform.runLater(() -> {
+            Stage stage = (Stage) scene.getWindow();
+            stage.close();
         });
     }
 }
