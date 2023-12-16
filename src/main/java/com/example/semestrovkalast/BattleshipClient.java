@@ -92,19 +92,14 @@ public class BattleshipClient {
 
                 gameUI.showRestartButton();
                 long endTime = System.currentTimeMillis();
-                while ((System.currentTimeMillis() - endTime) / 1000 / 60 < 10) {
-                    System.out.println("waiting");
+                while ((System.currentTimeMillis() - endTime) / 1000 / 3600 < 1) {
                     if (gameUI.isRestart()) {
-                        System.out.println("isReady");
                         Platform.runLater(() -> {
                             player.setNumberShips(0);
                             player.setMoving(false);
                             player.setReady(false);
                             gameUI.initUI();
-    //                        gameUI.closeWindow();
                         });
-                        isFirst = true;
-                        noWinner = true;
                         gameUI.setRestart(false);
                         break;
                     }

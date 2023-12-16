@@ -27,7 +27,7 @@ public class BattleshipUI extends Application {
     private boolean end = true;
 
     private StringProperty notification;
-    private Button restart;
+    private Button restartButton;
     private boolean isRestart;
     private Scene scene;
     private Stage primaryStage;
@@ -105,10 +105,53 @@ public class BattleshipUI extends Application {
     }
 
     private HBox gethBox() {
+
+        VBox menu = getMenu();
+
+        HBox hBox = new HBox(playerBoard.getBoard(), menu, enemyBoard.getBoard());
+        hBox.setSpacing(10);
+        hBox.setPadding(new Insets(10, 10, 10, 10));
+        return hBox;
+    }
+
+    private VBox getMenu() {
+        Button clearButton = getClearButton();
+        Button startButton = getButton(clearButton);
+        restartButton = getRestartButton();
+
+        Label notification = new Label();
+        notification.textProperty().bind(notificationProperty());
+
+        return new VBox(startButton, clearButton, notification, restartButton);
+    }
+
+    private Button getRestartButton() {
+        Button restart = new Button();
+        restart.setOnMousePressed(mouseEvent -> {
+            isRestart = true;
+            System.out.println("set restart");
+        });
+        restart.setVisible(false);
+        restart.setText("Play again");
+        return restart;
+    }
+
+    private Button getClearButton() {
+        Button clearButton = new Button();
+        clearButton.setOnMousePressed(mouseEvent -> {
+            playerBoard.clear();
+            player.setNumberShips(0);
+        });
+        clearButton.setText("Clear board");
+        return clearButton;
+    }
+
+    private Button getButton(Button clearButton) {
         Button startButton = new Button("Start Game");
         startButton.setOnAction(event -> {
             if (player.getNumberShips() == 10) {
                 startButton.setVisible(false);
+                clearButton.setVisible(false);
                 try {
                     player.setCharGameBoard();
                     ObjectOutputStream toServer = new ObjectOutputStream(player.getPlayerSocket().getOutputStream());
@@ -124,25 +167,7 @@ public class BattleshipUI extends Application {
                 System.out.println("place all 10 ships. Now only: " + player.getNumberShips());
             }
         });
-
-        Label notification = new Label();
-        notification.textProperty().bind(notificationProperty());
-
-
-        restart = new Button();
-        restart.setOnMousePressed(mouseEvent -> {
-            isRestart = true;
-            System.out.println("set restart");
-//            closeWindow();
-        });
-        restart.setVisible(false);
-
-        VBox vBox = new VBox(startButton, notification, restart);
-
-        HBox hBox = new HBox(playerBoard.getBoard(), vBox, enemyBoard.getBoard());
-        hBox.setSpacing(10);
-        hBox.setPadding(new Insets(10, 10, 10, 10));
-        return hBox;
+        return startButton;
     }
 
     private void showStage(Stage primaryStage) {
@@ -161,10 +186,6 @@ public class BattleshipUI extends Application {
         player.setGameBoard(playerBoard);
         enemyBoard = initGameBoard(true);
 
-        // Initialize the game boards with the initial state and ship placements
-        // For example:
-        // placeShips(player1Board);
-        // placeShips(player2Board);
     }
 
     private Board initGameBoard(boolean isEnemyBoard) {
@@ -276,7 +297,7 @@ public class BattleshipUI extends Application {
 
     public void showRestartButton() {
         Platform.runLater(() -> {
-            restart.setVisible(true);
+            restartButton.setVisible(true);
         });
     }
 

@@ -11,11 +11,15 @@ import java.util.List;
 
 public class Board {
     private GridPane board;
-    private int[] ships = new int[]{4, 3, 2, 1};
-//                                   1, 2, 3, 4
+    private int[] ships;
 
     public Board(GridPane board) {
         this.board = board;
+        setShips();
+    }
+
+    public void setShips() {
+        ships = new int[]{4, 3, 2, 1};
     }
 
     public int[] getShips() {
@@ -25,10 +29,7 @@ public class Board {
     public boolean placeShip(Ship ship, int x, int y) {
         System.out.println(ship.type);
         if (canPlaceShip(ship, x, y)) {
-//            int id = 0;
-//            while (id == 0) id += 1;
             int length = ship.type;
-
             if (ship.vertical) {
                 for (int i = y; i < y + length; i++) {
                     Button btn = getCell(x, i);
@@ -40,10 +41,8 @@ public class Board {
                     btn.setText("X");
                 }
             }
-
             return true;
         }
-
         return false;
     }
 
@@ -120,22 +119,8 @@ public class Board {
         return x >= 0 && x < 10 && y >= 0 && y < 10;
     }
 
-    private void updateBoard() {
-    }
-
     public GridPane getBoard() {
         return board;
-    }
-
-    public void setBoard(GridPane board) {
-        this.board = board;
-    }
-
-    public boolean isShot(int col, int row) {
-        Button cell = getCell(col, row);
-        if (cell == null) return false;
-        Color color = (Color) cell.getBackground().getFills().get(0).getFill();
-        return color == Color.RED || color == Color.BLACK;
     }
 
     private Button getCell(int col, int row) {
@@ -144,10 +129,13 @@ public class Board {
                 return (Button) node;
             }
         }
-        return null;  // Return null if the button is not found at the specified position
+        return null;
     }
 
-    public void move(int col, int row) {
-        updateBoard();
+    public void clear() {
+        for (Node node : board.getChildren()) {
+            ((Button) node).setText("");
+        }
+        setShips();
     }
 }
