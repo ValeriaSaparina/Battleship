@@ -1,9 +1,8 @@
 package com.example.semestrovkalast;
 
-import javafx.application.Platform;
-import javafx.stage.Stage;
-
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +10,8 @@ import java.util.List;
 public class EnterListener implements Runnable {
     private static int idPlayer = 0;
     private static int idRoom = 0;
-    private BattleshipServer battleshipServer;
-    private List<GameRoom> availableGameRoomList;
+    private final BattleshipServer battleshipServer;
+    private final List<GameRoom> availableGameRoomList;
 
     public EnterListener(BattleshipServer battleshipServer) {
         this.battleshipServer = battleshipServer;
@@ -21,20 +20,17 @@ public class EnterListener implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Accept thread is started");
         while (true) {
             try {
                 Socket clientSocket = battleshipServer.getServerSocket().accept();
                 System.out.println(clientSocket);
                 Player player = new Player(clientSocket);
-                System.out.println("New client connected: " + player.getPlayerSocket());
 
                 GameRoom gameRoom = getAvailableGameRoom();
                 gameRoom.addPlayer(player);
 
                 battleshipServer.addSocket(clientSocket);
 
-                System.out.println("room" + gameRoom.getId());
                 BufferedWriter output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
                 output.write(gameRoom.getId() + " " + idPlayer + "\n");
                 output.flush();
@@ -44,13 +40,13 @@ public class EnterListener implements Runnable {
                     gameThread.start();
                     availableGameRoomList.remove(gameRoom);
 
-                    (new StartListener(battleshipServer, gameRoom)).run();
+                    (new StartListener(gameRoom)).run();
                     idRoom += 1;
                 }
                 idPlayer += 1;
 
             } catch (IOException e) {
-                e.printStackTrace();
+                e.fillInStackTrace();
             }
         }
     }
@@ -61,7 +57,7 @@ public class EnterListener implements Runnable {
                 return room;
             }
         }
-        GameRoom newRoom = new GameRoom(battleshipServer);
+        GameRoom newRoom = new GameRoom();
         availableGameRoomList.add(newRoom);
         return newRoom;
     }

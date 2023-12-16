@@ -4,13 +4,12 @@ import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.layout.GridPane;
-import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
-    private GridPane board;
+    private final GridPane board;
     private int[] ships;
 
     public Board(GridPane board) {

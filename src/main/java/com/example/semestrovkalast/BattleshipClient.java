@@ -10,7 +10,6 @@ import java.io.ObjectInputStream;
 import java.net.Socket;
 
 public class BattleshipClient {
-    private Socket socket;
 
     private Player player;
     private int gameRoomID;
@@ -18,9 +17,8 @@ public class BattleshipClient {
 
     public BattleshipClient(String serverAddress, int port) {
         try {
-            socket = new Socket(serverAddress, port);
+            Socket socket = new Socket(serverAddress, port);
             BufferedReader fromServerString = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//            ObjectInputStream fromServerObject = new ObjectInputStream(socket.getInputStream());
             player = new Player(socket);
 
             int[] IDs = getDataFromServer(fromServerString);
@@ -31,10 +29,6 @@ public class BattleshipClient {
                 showStartWindow();
             }
 
-//            int whoMove = fromServer.read();
-//            if (whoMove != -1) {
-//                gameUI.updateSetOnActions();
-//            }
 
             while (true) {
                 boolean noWinner = true;
@@ -42,12 +36,8 @@ public class BattleshipClient {
                 while (noWinner) {
 
                     if (isFirst) {
-                        System.out.println("before reading from server: " + System.nanoTime());
                         String status = fromServerString.readLine();
-                        System.out.println("message from server has been received: " + status);
-
                         if (status.equals(Params.SUCCESS)) {
-                            System.out.println("SUCCESS has been received");
                             gameUI.updateSetOnActions();
                         }
                         isFirst = false;
@@ -55,12 +45,9 @@ public class BattleshipClient {
 
 
                     int whoMove = Integer.parseInt(fromServerString.readLine());
-                    System.out.println("whoMove from server: " + whoMove);
-                    System.out.println("player.id: " + player.getId());
                     if (whoMove == player.getId()) {
                         System.out.println("setting ready");
                         gameUI.setNotification("Your turn");
-    //                    player.setReady(true);
                         player.setMoving(true);
                     } else {
                         gameUI.setNotification("enemy's turn");
@@ -70,7 +57,6 @@ public class BattleshipClient {
                     ObjectInputStream fromServer = new ObjectInputStream(player.getPlayerSocket().getInputStream());
                     Object rrr = fromServer.readObject();
                     if (rrr instanceof Message response) {
-                        System.out.println("status in UI: " + response.getStatus());
                         if (player.getId() == whoMove) {
                             gameUI.updateBoardUI(response, gameUI.getEnemyBoard().getBoard());
                         } else {
@@ -109,46 +95,32 @@ public class BattleshipClient {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
         }
     }
 
     public static void main(String[] args) {
-        String serverAddress = "localhost";  // Replace with the actual server IP address
-        int port = 4004;  // Replace with the actual server port
 
-        BattleshipClient client = new BattleshipClient(serverAddress, port);
+        BattleshipClient client = new BattleshipClient(Params.SERVER_ADDRESS, Params.PORT);
 
-    }
-
-    private boolean gameIsStarted() {
-        return player.getGameRoom().isReady();
     }
 
     private int[] getDataFromServer(BufferedReader fromServer) throws IOException {
         try {
-            System.out.println("getting roomID");
             String[] data = fromServer.readLine().split(" ");
             return new int[]{Integer.parseInt(data[0]), Integer.parseInt(data[1])};
         } catch (NumberFormatException e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
         }
-        System.out.println("ERROR");
         return new int[1];
     }
 
     private void showStartWindow() {
         Platform.startup(() -> {
-            System.out.println("in startup");
             Stage primaryStage = new Stage();
-            gameUI = new BattleshipUI(player, player.getGameRoom());
-            System.out.println("playetID in startup: " + player.getId());
-            System.out.println("playetMoving in startup: " + player.isMoving());
-//            player.getGameRoom().setID(gameRoomID);
+            gameUI = new BattleshipUI(player);
             gameUI.setGameRoomID(gameRoomID);
             gameUI.start(primaryStage);
         });

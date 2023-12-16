@@ -20,24 +20,18 @@ import java.io.ObjectOutputStream;
 import java.util.List;
 
 public class BattleshipUI extends Application {
+    private final Player player;
+    private final StringProperty notification;
     private Board playerBoard;
     private Board enemyBoard;
-    private Player player;
     private int gameRoomID = 9;
-    private boolean end = true;
-
-    private StringProperty notification;
     private Button restartButton;
     private boolean isRestart;
-    private Scene scene;
     private Stage primaryStage;
-//    private GameRoom gameRoom;
 
-    public BattleshipUI(Player player, GameRoom gameRoom) {
+    public BattleshipUI(Player player) {
         this.player = player;
         this.notification = new SimpleStringProperty("Place 10 ships");
-        System.out.println("moving in constructor: " + player.isMoving());
-//        this.gameRoom = gameRoom;
     }
 
     public static void main(String[] args) {
@@ -62,10 +56,10 @@ public class BattleshipUI extends Application {
                 return (Button) node;
             }
         }
-        return null;  // Return null if the button is not found at the specified position
+        return null;
     }
 
-    public void updateBoardUI(Message message, /*int col, int row,*/ GridPane board/*, String message*/) {
+    public void updateBoardUI(Message message, GridPane board) {
         Button button = getButtonFromGridPane(message.getCol(), message.getRow(), board);
         String status = message.getStatus();
         if (button != null) {
@@ -87,23 +81,6 @@ public class BattleshipUI extends Application {
         }
     }
 
-    public void updateBoardUI(Node node, String message) {
-        if (node != null) {
-            System.out.println("upd node is not null; message: " + message);
-            System.out.println("message.equals(Params.HIT): " + message.equals(Params.HIT));
-            if (message.equals(Params.DESTROYED)) {
-                node.setStyle("-fx-background-color: darkgray;");
-            } else {
-                if (message.equals(Params.MISS)) {
-                    node.setStyle("-fx-background-color: lightblue;");
-                } else if (message.equals(Params.HIT)) {
-                    System.out.println("upd we are in hit");
-                    node.setStyle("-fx-background-color: red;");
-                }
-            }
-        }
-    }
-
     private HBox gethBox() {
 
         VBox menu = getMenu();
@@ -116,7 +93,7 @@ public class BattleshipUI extends Application {
 
     private VBox getMenu() {
         Button clearButton = getClearButton();
-        Button startButton = getButton(clearButton);
+        Button startButton = getStartButton(clearButton);
         restartButton = getRestartButton();
 
         Label notification = new Label();
@@ -146,7 +123,7 @@ public class BattleshipUI extends Application {
         return clearButton;
     }
 
-    private Button getButton(Button clearButton) {
+    private Button getStartButton(Button clearButton) {
         Button startButton = new Button("Start Game");
         startButton.setOnAction(event -> {
             if (player.getNumberShips() == 10) {
@@ -164,18 +141,15 @@ public class BattleshipUI extends Application {
                 }
             } else {
                 notification.set("place all 10 ships");
-                System.out.println("place all 10 ships. Now only: " + player.getNumberShips());
             }
         });
         return startButton;
     }
 
     private void showStage(Stage primaryStage) {
+        Scene scene = new Scene(gethBox(), 950, 500);
         primaryStage.setTitle("Battleship");
-
-        this.scene = new Scene(gethBox(), 500, 500);
         primaryStage.setScene(scene);
-        System.out.println("in showStage");
         primaryStage.show();
     }
 
@@ -193,11 +167,11 @@ public class BattleshipUI extends Application {
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
                 Button button = new Button();
-                button.setMinSize(40, 40); // Set button size
+                button.setMinSize(40, 40);
                 int x = i;
                 int y = j;
                 if (!isEnemyBoard) {
-                    button.setOnMousePressed(event -> handleMouseClick(button, x, y, event.getButton()));
+                    button.setOnMousePressed(event -> handleMouseClick(x, y, event.getButton()));
                 }
                 gridPane.add(button, j, i);
             }
@@ -205,16 +179,8 @@ public class BattleshipUI extends Application {
         return new Board(gridPane);
     }
 
-    public void launchGUI() {
-        launch();
-    }
-
-    public void setPlayer(Player player) {
-        this.player = player;
-    }
 
     public void updateSetOnActions() {
-        System.out.println("update actions");
         updateActionForEnemyBoard();
         updateActionForPlayerBoard();
     }
@@ -223,7 +189,6 @@ public class BattleshipUI extends Application {
         List<Node> nodes = playerBoard.getBoard().getChildren();
         for (Node node : nodes) {
             ((Button) node).setOnAction(event -> {
-                System.out.println("clicked my board");
             });
             node.setOnMousePressed(mouseEvent -> {
             });
@@ -232,27 +197,23 @@ public class BattleshipUI extends Application {
     }
 
     private void updateActionForEnemyBoard() {
-        System.out.println("enemy upd");
         List<Node> nodes = enemyBoard.getBoard().getChildren();
         for (Node node : nodes) {
-            ((Button) node).setOnMousePressed(event -> {
+            node.setOnMousePressed(event -> {
 
                 try {
-                    System.out.println("player.isMoving() " + player.isMoving());
-                    System.out.println("player.id in move: " + player.getId());
                     if (player.isMoving()) {
-                        System.out.println("clicked on enemy board");
                         player.makeMove(GridPane.getColumnIndex(node), GridPane.getRowIndex(node));
                         node.setDisable(true);
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    e.fillInStackTrace();
                 }
             });
         }
     }
 
-    private void handleMouseClick(Button button, int row, int col, MouseButton buttonType) {
+    private void handleMouseClick(int row, int col, MouseButton buttonType) {
         int[] ships = playerBoard.getShips();
         int id = 0;
         while (ships[id] == 0) id += 1;
@@ -264,31 +225,15 @@ public class BattleshipUI extends Application {
 
 
     public void setGameRoomID(int gameRoomID) {
-//        gameRoom.setID(gameRoomID);
         this.gameRoomID = gameRoomID;
-    }
-
-    public boolean isEnd() {
-//        System.out.println(end);
-        return end;
-    }
-
-    public void setEnd(boolean end) {
-        this.end = end;
     }
 
     public Board getEnemyBoard() {
         return enemyBoard;
     }
 
-    public String getNotification() {
-        return notification.get();
-    }
-
     public void setNotification(String notification) {
-        Platform.runLater(() -> {
-            this.notification.set(notification);
-        });
+        Platform.runLater(() -> this.notification.set(notification));
     }
 
     public StringProperty notificationProperty() {
@@ -296,9 +241,7 @@ public class BattleshipUI extends Application {
     }
 
     public void showRestartButton() {
-        Platform.runLater(() -> {
-            restartButton.setVisible(true);
-        });
+        Platform.runLater(() -> restartButton.setVisible(true));
     }
 
     public boolean isRestart() {
@@ -309,11 +252,5 @@ public class BattleshipUI extends Application {
         this.isRestart = restart;
     }
 
-    public void closeWindow() {
-        Platform.runLater(() -> {
-            Stage stage = (Stage) scene.getWindow();
-            stage.close();
-        });
-    }
 }
 

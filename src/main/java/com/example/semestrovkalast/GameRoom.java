@@ -1,6 +1,5 @@
 package com.example.semestrovkalast;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,39 +14,25 @@ public class GameRoom implements Runnable {
         roomId = 0;
     }
 
-    private MoveListener moveListener;
+    private final MoveListener moveListener;
     private boolean isReady;
-    private HashMap<Integer, Player> playerList;
-    private boolean noWinner;
-    private boolean restart = true;
+    private final HashMap<Integer, Player> playerList;
 
-    public GameRoom(BattleshipServer battleshipServer) {
+    public GameRoom() {
         roomId += 1;
         isReady = false;
         playerList = new HashMap<>();
-        noWinner = true;
-        moveListener = new MoveListener(battleshipServer, this);
+        moveListener = new MoveListener(this);
     }
 
     @Override
     public void run() {
-        while (restart) {
-            System.out.println("gameThread is started");
-
+        while (true) {
             waitUntilReady();
-//        moveListener.processingMessages();
             startGame();
             moveListener.readingMessages();
-//            System.out.println();
-//            try {
-//                new StartListener(BattleshipServer.getServerInstance(), this);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
         }
     }
-
-//    public
 
     private void waitUntilReady() {
         while (!isReady) {
@@ -62,36 +47,14 @@ public class GameRoom implements Runnable {
 
 
     private void startGame() {
-        System.out.println("Game start");
 
         for (Player player : playerList.values()) {
             player.setNumberShips(10);
         }
 
-//        int whoMove = (new Random()).nextInt(2);
         int whoMove = 0;
-        System.out.println("moving: " + whoMove);
-//        for (Player player : playerList.values()) {
-//            try {
-//                BufferedWriter toClient = new BufferedWriter(new OutputStreamWriter(player.getPlayerSocket().getOutputStream()));
-////                toClient.write(whoMove);
-//                toClient.write(Params.SUCCESS);
-//                toClient.flush();
         setFirstMovingPlayer(whoMove);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
 
-//        while (noWinner) {
-//            for (Player player : playerList.values()) {
-//                player.move();
-//                if (player.isWinner()) {
-//                    noWinner = false;
-//                    break;
-//                }
-//            }
-//        }
     }
 
 
@@ -117,10 +80,6 @@ public class GameRoom implements Runnable {
     }
 
 
-    public boolean isReady() {
-        return isReady;
-    }
-
     public void setReady(boolean isReady) {
         this.isReady = isReady;
     }
@@ -132,7 +91,6 @@ public class GameRoom implements Runnable {
         list.add(values.get(whoMove).getPlayerSocket());
         list.add(values.get(1 - whoMove).getPlayerSocket());
         moveListener.setSockets(list);
-        System.out.println("whoMove after generated: " + whoMove);
         moveListener.setWhoMove(whoMove);
     }
 

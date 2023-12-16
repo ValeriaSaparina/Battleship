@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class BattleshipServer {
     private ServerSocket serverSocket;
@@ -14,19 +13,15 @@ public class BattleshipServer {
     private HashMap<Integer, GameRoom> startedGameRooms;
     private transient List<Socket> allSockets;
 
-    private MoveListener moveListener;
-    private EnterListener enterListener;
-
     private static BattleshipServer serverInstance;
-    private final int PORT = 4004;
 
     private BattleshipServer() {
         try {
-            serverSocket = new ServerSocket(PORT);
+            serverSocket = new ServerSocket(Params.PORT);
             startedGameRooms = new HashMap<>();
             allSockets = new ArrayList<>();
         } catch (IOException e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
         }
     }
 
@@ -43,11 +38,8 @@ public class BattleshipServer {
     }
 
     public void start() {
-        System.out.println("Server started. Waiting for clients...");
-//        moveListener = new MoveListener(this);
-        enterListener = new EnterListener(this);
+        EnterListener enterListener = new EnterListener(this);
         new Thread(enterListener).start();
-//        new Thread(moveListener).start();
     }
 
 
@@ -65,21 +57,10 @@ public class BattleshipServer {
         return startedGameRooms.get(idRoom);
     }
 
-    public MoveListener getMoveListener() {
-        return moveListener;
-    }
-
-    public List<Socket> getAllSockets() {
-        return allSockets;
-    }
-
 
     public void addSocket(Socket clientSocket) {
         allSockets.add(clientSocket);
         System.out.println("size list<socket> after adding: " + allSockets.size());
     }
 
-    public Map<Integer, GameRoom> getStartedGameRooms() {
-        return startedGameRooms;
-    }
 }

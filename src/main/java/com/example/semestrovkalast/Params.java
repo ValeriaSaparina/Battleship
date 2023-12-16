@@ -7,8 +7,9 @@ public class Params {
     public static final String DESTROYED = "destroyed";
 
     public static final String SUCCESS = "success";
-    public static final String ERROR = "error";
     public static final String READY = "ready";
     public static final String SHOT = "shot";
-    public static final String GET_ROOM_ID = "getRoomID";
+
+    public static final int PORT = 4004;
+    public static final String SERVER_ADDRESS = "localhost";
 }

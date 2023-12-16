@@ -2,27 +2,19 @@ package com.example.semestrovkalast;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MoveListener {
 
-    private BattleshipServer battleshipServer;
-    private GameRoom gameRoom;
-    private List<Socket> socketsList;
-    //    private List<ObjectInputStream> fromClients;
-    private Deque<Message> messagesPool;
+    private final GameRoom gameRoom;
+    private final List<Socket> socketsList;
     private int whoMove;
     private boolean firstIter;
 
-    public MoveListener(BattleshipServer battleshipServer, GameRoom gameRoom) {
-        this.battleshipServer = battleshipServer;
+    public MoveListener(GameRoom gameRoom) {
         this.gameRoom = gameRoom;
         socketsList = new CopyOnWriteArrayList<>();
-        messagesPool = new ArrayDeque<>();
         firstIter = true;
     }
 
@@ -35,43 +27,31 @@ public class MoveListener {
                 int listSize = socketsList.size();
                 int i = 0;
                 while (i < listSize) {
-                    System.out.println("getting sockets");
                     Socket client = socketsList.get(i);
                     Player enemy = gameRoom.getPlayer(listSize - i - 1);
-                    System.out.println("enemyID: " + (listSize - i - 1));
-                    System.out.println("sockets was got");
                     try {
                         BufferedWriter toClientPlayer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
                         BufferedWriter toClientEnemy = new BufferedWriter(new OutputStreamWriter(enemy.getPlayerSocket().getOutputStream()));
-                        System.out.println("toClient and toEnemy were got");
 
                         if (firstIter) {
                             toClientPlayer.write(Params.SUCCESS + "\n");
                             toClientPlayer.flush();
                             toClientEnemy.write(Params.SUCCESS + "\n");
                             toClientEnemy.flush();
-                            System.out.println("send message to player that connect is success");
                             firstIter = false;
                         }
 
-                        System.out.println("whoMove in sending: " + whoMove);
                         toClientPlayer.write(whoMove + "\n");
                         toClientPlayer.flush();
                         toClientEnemy.write(whoMove + "\n");
                         toClientEnemy.flush();
-                        System.out.println("message who first moving was sent");
 
-                        System.out.println("enemy: " + enemy.getId());
                         ObjectInputStream fromClient = new ObjectInputStream(client.getInputStream());
-                        System.out.println("ХМММММММ");
                         Message message = (Message) fromClient.readObject();
-                        System.out.println("ХМММММММ2");
-                        System.out.println("server message from user: " + message.getIdSender() + " move: " + message.getMove() + " roomID: " + message.getIdRoom());
 
                         char[][] enemyGameBoard = enemy.getCharGameBoard();
                         int col = message.getCol();
                         int row = message.getRow();
-                        System.out.println("col: " + col + "; row: " + row);
                         char cell = enemyGameBoard[col][row];
 
                         try {
@@ -90,7 +70,6 @@ public class MoveListener {
                                     System.out.println(updCells);
                                 } else status = Params.HIT;
                             }
-                            System.out.println("status in server AAAAAAAAAAAAA: " + status);
                             updateCharGameBoard(enemyGameBoard, col, row, status);
                             message = new Message(col, row, status);
                             if (status.equals(Params.DESTROYED)) {
@@ -99,13 +78,10 @@ public class MoveListener {
                             }
                             toClientEnemyObj.writeObject(message);
                             toClientEnemyObj.flush();
-                            System.out.println("enemy sent");
                             toClientPlayerObj.writeObject(message);
                             toClientPlayerObj.flush();
-                            System.out.println("player sent + " + System.nanoTime());
                             i = (i + 1) % listSize;
                             whoMove = 1 - whoMove;
-                            System.out.println("i: " + i + "; whoMove: " + whoMove);
 
                             noWinner = enemy.getNumberShips() != 0;
                             toClientPlayerObj.writeBoolean(noWinner);
@@ -114,29 +90,21 @@ public class MoveListener {
                             toClientEnemyObj.flush();
 
                             if (!noWinner) {
-                                System.out.println("winner has been gotten");
                                 Player player = gameRoom.getPlayer(i);
                                 Thread.sleep(300);
-//                                Thread startListener = new Thread(new StartListener(battleshipServer, gameRoom));
-//                                startListener.start();
-                                new StartListener(battleshipServer, gameRoom).run();
-                                System.out.println("listener is start");
-//                                startListener.join();
+                                new StartListener(gameRoom).run();
                                 noWinner = true;
                                 firstIter = true;
-//                                setWhoMove();
                                 whoMove = 0;
                                 enemy.setNumberShips(10);
                                 player.setNumberShips(10);
-//                                enemy.setReady(false);
                                 break;
                             }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        } catch (IOException | InterruptedException e) {
+                            e.fillInStackTrace();
                         }
-                    } catch (IOException | ClassNotFoundException e) {}
+                    } catch (IOException | ClassNotFoundException ignored) {
+                    }
                 }
             }
         }
