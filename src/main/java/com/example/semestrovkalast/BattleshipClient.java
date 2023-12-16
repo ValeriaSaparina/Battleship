@@ -92,7 +92,8 @@ public class BattleshipClient {
 
                 gameUI.showRestartButton();
                 long endTime = System.currentTimeMillis();
-                while ((System.currentTimeMillis() - endTime) / 1000 / 3600 < 1) {
+                while ((System.currentTimeMillis() - endTime) / 1000 / 60 < 10) {
+                    System.out.println(gameUI.isRestart());
                     if (gameUI.isRestart()) {
                         Platform.runLater(() -> {
                             player.setNumberShips(0);

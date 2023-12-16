@@ -116,7 +116,7 @@ public class MoveListener {
                             if (!noWinner) {
                                 System.out.println("winner has been gotten");
                                 Player player = gameRoom.getPlayer(i);
-                                Thread.sleep(3000);
+                                Thread.sleep(300);
 //                                Thread startListener = new Thread(new StartListener(battleshipServer, gameRoom));
 //                                startListener.start();
                                 new StartListener(battleshipServer, gameRoom).run();
